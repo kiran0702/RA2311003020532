@@ -81,7 +81,7 @@ async function authenticateClient(input = {}) {
 async function verifyToken(token) {
   const auth = await authenticateClient();
 
-  if (!auth || auth.access_token !== token) {
+  if (auth?.access_token !== token) {
     return null;
   }
 

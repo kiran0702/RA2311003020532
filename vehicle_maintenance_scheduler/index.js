@@ -95,6 +95,7 @@ async function fetchEvaluationToken() {
     );
     return resp.data.access_token;
   } catch (err) {
+    console.warn("Failed to fetch evaluation token:", err.message || err);
     return null;
   }
 }
@@ -121,19 +122,14 @@ app.use(express.json());
 app.use((req, res, next) => {
   try {
     const [path, qs] = req.url.split("?");
-    // remove literal spaces and trailing encoded spaces
-    const trimmed = path
-      .replace(/(\\s|%20)+$/g, "")
-      .replace(/%20/g, " ")
-      .trim();
+    const trimmed = path.replaceAll("%20", "").trim();
     req.url = qs ? `${trimmed}?${qs}` : trimmed;
-  } catch (e) {
-    // if any issue, continue without modification
+  } catch (error) {
+    console.warn("URL normalization skipped:", error.message || error);
   }
   return next();
 });
 
-// Normalize incoming URLs: trim accidental trailing spaces or encoded spaces
 app.use((req, res, next) => {
   try {
     const original = req.originalUrl || req.url || "";
@@ -141,11 +137,10 @@ app.use((req, res, next) => {
     const cleaned = decoded.trim();
 
     if (cleaned !== decoded) {
-      // redirect to the cleaned URL (preserve query string if present)
       return res.redirect(301, cleaned);
     }
-  } catch (e) {
-    // if decode fails, just continue
+  } catch (error) {
+    console.warn("Incoming URL cleanup skipped:", error.message || error);
   }
 
   return next();
@@ -159,11 +154,11 @@ app.get("/api/depots", async (req, res) => {
   if (useUpstream) {
     try {
       const data = await fetchFromEvaluation("depots");
-      if (data && data.depots) {
+      if (data?.depots) {
         return res.json({ depots: data.depots });
       }
-    } catch (err) {
-      // fallthrough to local
+    } catch (error) {
+      console.warn("Upstream depots fetch failed:", error.message || error);
     }
   }
 
@@ -174,11 +169,11 @@ app.get("/api/vehicles", async (req, res) => {
   if (useUpstream) {
     try {
       const data = await fetchFromEvaluation("vehicles");
-      if (data && data.vehicles) {
+      if (data?.vehicles) {
         return res.json({ vehicles: data.vehicles });
       }
-    } catch (err) {
-      // fallthrough to local
+    } catch (error) {
+      console.warn("Upstream vehicles fetch failed:", error.message || error);
     }
   }
 
