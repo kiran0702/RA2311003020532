@@ -53,22 +53,46 @@ const vehicles = [
   },
 ];
 
-const useUpstream = String(process.env.SCHEDULER_USE_UPSTREAM || "false").toLowerCase() === "true";
-const evaluationBaseUrl = process.env.SCHEDULER_EVALUATION_BASE_URL || "http://20.207.122.201/evaluation-service";
-const loggingServiceBaseUrl = process.env.LOGGING_SERVICE_BASE_URL || "http://127.0.0.1:3001";
+const useUpstream =
+  String(process.env.SCHEDULER_USE_UPSTREAM || "false").toLowerCase() ===
+  "true";
+const evaluationBaseUrl =
+  process.env.SCHEDULER_EVALUATION_BASE_URL ||
+  "http://20.207.122.201/evaluation-service";
+const loggingServiceBaseUrl =
+  process.env.LOGGING_SERVICE_BASE_URL || "http://127.0.0.1:3001";
 
 async function fetchEvaluationToken() {
   try {
     const payload = {
-      email: process.env.LOG_EMAIL || process.env.SCHEDULER_EMAIL || "kp8533@srmist.edu.in",
+      email:
+        process.env.LOG_EMAIL ||
+        process.env.SCHEDULER_EMAIL ||
+        "kp8533@srmist.edu.in",
       name: process.env.LOG_NAME || process.env.SCHEDULER_NAME || "Kiran P",
-      mobileNo: process.env.LOG_MOBILE_NO || process.env.SCHEDULER_MOBILE_NO || "7338993901",
-      githubUsername: process.env.LOG_GITHUB_USERNAME || process.env.SCHEDULER_GITHUB_USERNAME || "kiran0702",
-      rollNo: process.env.LOG_ROLL_NO || process.env.SCHEDULER_ROLL_NO || "RA2311003020532",
-      accessCode: process.env.LOG_ACCESS_CODE || process.env.SCHEDULER_ACCESS_CODE || "QkbpxH",
+      mobileNo:
+        process.env.LOG_MOBILE_NO ||
+        process.env.SCHEDULER_MOBILE_NO ||
+        "7338993901",
+      githubUsername:
+        process.env.LOG_GITHUB_USERNAME ||
+        process.env.SCHEDULER_GITHUB_USERNAME ||
+        "kiran0702",
+      rollNo:
+        process.env.LOG_ROLL_NO ||
+        process.env.SCHEDULER_ROLL_NO ||
+        "RA2311003020532",
+      accessCode:
+        process.env.LOG_ACCESS_CODE ||
+        process.env.SCHEDULER_ACCESS_CODE ||
+        "QkbpxH",
     };
 
-    const resp = await axios.post(`${loggingServiceBaseUrl}/evaluation-service/auth`, payload, { timeout: 10000 });
+    const resp = await axios.post(
+      `${loggingServiceBaseUrl}/evaluation-service/auth`,
+      payload,
+      { timeout: 10000 },
+    );
     return resp.data.access_token;
   } catch (err) {
     return null;
@@ -79,15 +103,53 @@ async function fetchFromEvaluation(path) {
   const token = await fetchEvaluationToken();
   if (!token) return null;
 
-  const resp = await axios.get(`${evaluationBaseUrl}/${path.replace(/^\/+/, "")}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    timeout: 10000,
-  });
+  const resp = await axios.get(
+    `${evaluationBaseUrl}/${path.replace(/^\/+/, "")}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 10000,
+    },
+  );
 
   return resp.data;
 }
 
 app.use(express.json());
+
+// Normalize request URL: trim trailing spaces and %20 that may be appended
+// by API clients accidentally (e.g. Postman with a trailing space in the URL).
+app.use((req, res, next) => {
+  try {
+    const [path, qs] = req.url.split("?");
+    // remove literal spaces and trailing encoded spaces
+    const trimmed = path
+      .replace(/(\\s|%20)+$/g, "")
+      .replace(/%20/g, " ")
+      .trim();
+    req.url = qs ? `${trimmed}?${qs}` : trimmed;
+  } catch (e) {
+    // if any issue, continue without modification
+  }
+  return next();
+});
+
+// Normalize incoming URLs: trim accidental trailing spaces or encoded spaces
+app.use((req, res, next) => {
+  try {
+    const original = req.originalUrl || req.url || "";
+    const decoded = decodeURIComponent(original);
+    const cleaned = decoded.trim();
+
+    if (cleaned !== decoded) {
+      // redirect to the cleaned URL (preserve query string if present)
+      return res.redirect(301, cleaned);
+    }
+  } catch (e) {
+    // if decode fails, just continue
+  }
+
+  return next();
+});
 
 app.get("/health", async (req, res) => {
   res.json({ status: "ok" });
