@@ -1,0 +1,14 @@
+{
+  "name": "logging-middleware",
+  "version": "1.0.0",
+  "description": "Reusable logging middleware service for coding assessment",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  }
+}
