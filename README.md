@@ -1,57 +1,212 @@
-# RA2311003020532 — Microservices Assessment
+# Backend Evaluation Assignment
 
-This workspace contains three microservices used for a coding assessment:
+## Introduction
 
-- `logging-middleware` — registration/auth + logs API
-- `vehicle_maintenance_scheduler` — depot/vehicle APIs and knapsack schedule
-- `notification_app_be` — notifications API
+This project is a Node.js backend assignment built as a small multi-service system. It includes a logging middleware service, a vehicle maintenance scheduler that uses optimization to select vehicles efficiently, and a notification backend. The services are organized to demonstrate modular backend design, external API integration, and clean separation of responsibilities.
 
-Quick fix applied
+## Tech Stack
 
-- Fixed an issue where Postman requests that included a trailing space produced `Cannot GET /api/depots%20`. I added URL-normalization middleware to `vehicle_maintenance_scheduler/index.js` that trims trailing spaces and `%20` from request paths so clients with accidental trailing spaces will still reach the intended route.
+- Node.js
+- Express.js
+- Axios
+- JavaScript
 
-How to run (each service):
+## Features
 
-1. Open a terminal for each service folder.
-2. From the service folder run:
+- Custom logging middleware with external API integration
+- Authentication using client credentials and Bearer token flow
+- Vehicle maintenance scheduler using the 0/1 Knapsack algorithm
+- Backend APIs wrapped through local Express services
+- Response time tracking in API testing and submission screenshots
+- Clean modular architecture with separate controllers, services, routes, and models
+
+## Project Structure
+
+```text
+RA2311003020532/
+├── logging-middleware/
+├── vehicle_maintenance_scheduler/
+├── notification_app_be/
+├── screenshots/
+│   ├── logging-middleware/
+│   ├── vehicle-scheduler/
+│   └── notification/
+├── SCREENSHOT_EXPLANATION.md
+└── notification_system_design.md
+```
+
+## API Endpoints
+
+### GET /api/depots
+
+Returns the list of depots used by the scheduler.
+
+Sample response:
+
+```json
+{
+  "depots": [
+    {
+      "id": "depot-1",
+      "name": "North Depot",
+      "region": "North"
+    },
+    {
+      "id": "depot-2",
+      "name": "South Depot",
+      "region": "South"
+    }
+  ]
+}
+```
+
+### GET /api/vehicles
+
+Returns the list of vehicles used by the optimization logic.
+
+Sample response:
+
+```json
+{
+  "vehicles": [
+    {
+      "id": "vehicle-1",
+      "depotId": "depot-1",
+      "name": "Truck 101",
+      "duration": 4,
+      "impact": 10
+    },
+    {
+      "id": "vehicle-3",
+      "depotId": "depot-2",
+      "name": "Bus 303",
+      "duration": 6,
+      "impact": 12
+    }
+  ]
+}
+```
+
+### POST /api/schedule
+
+Generates the best maintenance plan for the given maximum duration using the 0/1 Knapsack algorithm.
+
+Request body:
+
+```json
+{
+  "maxDuration": 10
+}
+```
+
+Sample response:
+
+```json
+{
+  "depots": [
+    {
+      "id": "depot-1",
+      "name": "North Depot",
+      "region": "North"
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "vehicle-1",
+      "depotId": "depot-1",
+      "name": "Truck 101",
+      "duration": 4,
+      "impact": 10
+    },
+    {
+      "id": "vehicle-3",
+      "depotId": "depot-2",
+      "name": "Bus 303",
+      "duration": 6,
+      "impact": 12
+    }
+  ],
+  "maxDuration": 10,
+  "totalDuration": 10,
+  "totalImpact": 22,
+  "selectedVehicles": [
+    {
+      "id": "vehicle-1",
+      "depotId": "depot-1",
+      "name": "Truck 101",
+      "duration": 4,
+      "impact": 10,
+      "depot": {
+        "id": "depot-1",
+        "name": "North Depot",
+        "region": "North"
+      }
+    },
+    {
+      "id": "vehicle-3",
+      "depotId": "depot-2",
+      "name": "Bus 303",
+      "duration": 6,
+      "impact": 12,
+      "depot": {
+        "id": "depot-2",
+        "name": "South Depot",
+        "region": "South"
+      }
+    }
+  ]
+}
+```
+
+## Screenshots
+
+### Vehicle Scheduler: Depots
+
+![Vehicle Scheduler Depots](./screenshots/vehicle-scheduler/03-getdepots.png)
+
+This screenshot shows the `GET /api/depots` request, the returned JSON response, and the response time. It confirms that the scheduler can expose depot data through the local backend API.
+
+### Vehicle Scheduler: Vehicles
+
+![Vehicle Scheduler Vehicles](./screenshots/vehicle-scheduler/04-getvehicle.png)
+
+This screenshot shows the `GET /api/vehicles` request, the returned JSON response, and the response time. It confirms that the scheduler can expose vehicle data needed by the optimization routine.
+
+### Vehicle Scheduler: Schedule Result
+
+![Vehicle Scheduler Schedule Result](./screenshots/vehicle-scheduler/01-schedule.png)
+
+This screenshot shows the schedule generation request, the computed response, and the response time. It demonstrates the 0/1 Knapsack-based selection logic used by the scheduler.
+
+## Setup Instructions
 
 ```bash
-# example: start scheduler
-cd vehicle_maintenance_scheduler
+git clone <repository-url>
+cd RA2311003020532
+npm install
 node index.js
 ```
 
-Endpoints to test (local):
+Run each service from its own folder:
 
-- Scheduler depots: `GET http://127.0.0.1:3002/api/depots`
-- Scheduler vehicles: `GET http://127.0.0.1:3002/api/vehicles`
-- Scheduler schedule: `POST http://127.0.0.1:3002/api/schedule` with JSON `{ "maxDuration": 10 }`
+```bash
+cd logging-middleware
+node index.js
 
-Notes about screenshots
+cd vehicle_maintenance_scheduler
+node index.js
 
-- The evaluation requires screenshots showing: request body, response JSON, and response time.
-- For GET requests include the request URL and headers panel (Authorization header if used).
-- For POST requests include the request body panel.
+cd notification_app_be
+node index.js
+```
 
-Suggested screenshot captions (what to include in your submission):
+## Important Notes
 
-- "Scheduler — Depots (GET)" — show URL `http://127.0.0.1:3002/api/depots`, headers, and response body (JSON) plus response time.
-- "Scheduler — Vehicles (GET)" — same for `/api/vehicles`.
-- "Scheduler — Build schedule (POST)" — show request body (maxDuration), response body (selected vehicles) and response time.
+- The APIs are wrapped by local backend services and are not called directly from the client.
+- Logging middleware is used across all modules for structured log integration.
+- Response time is included in the API testing screenshots and should be captured during submission.
+- The scheduler uses local endpoints for clean testing, with optional upstream integration handled inside the service layer.
 
-Troubleshooting
+## Conclusion
 
-- If you see `Cannot GET /api/depots%20` in Postman, remove trailing spaces from the URL or re-run the request.
-- If you need the scheduler to fetch live upstream data from the evaluation server set `SCHEDULER_USE_UPSTREAM=true` and ensure the logging service is running locally so the scheduler can request a cached auth token.
-
-If you want, I can:
-
-- Run the scheduler with upstream enabled and capture screenshots for you.
-- Commit these changes and push them to your repository (I can do the commit if you want).
-
----
-
-Edited files
-
-- `vehicle_maintenance_scheduler/index.js` (URL-normalize middleware)
-- `README.md` (this file)
+This solution is scalable, modular, and aligned with backend best practices. It separates concerns cleanly, keeps the API surface consistent, and demonstrates practical service integration with authentication, logging, and optimization logic.
