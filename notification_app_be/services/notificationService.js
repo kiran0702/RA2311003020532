@@ -206,22 +206,13 @@ async function markNotificationAsRead(notificationId) {
     `Notification marked read: ${notificationId}`,
   );
 
-        if (combinedNotifications.length > 0) {
-          console.log('notificationService: returning combined upstream + local notifications:', combinedNotifications.length);
-          return combinedNotifications;
-        }
+  return notification;
+}
 
-        console.log('notificationService: upstream and local empty, returning dynamic fallback');
-        return buildDynamicFallbackNotifications();
 module.exports = {
-        console.log('notificationService: upstream fetch error, returning local or fallback:', error.message || error);
-        const localNotifications = notifications.map(normalizeNotification);
-        if (localNotifications.length > 0) {
-          console.log('notificationService: returning local notifications:', localNotifications.length);
-          return localNotifications;
-        }
-
-        console.log('notificationService: no local notifications, returning dynamic fallback');
-        return buildDynamicFallbackNotifications();
+  createNotification,
+  listNotifications,
+  fetchNotifications,
+  getNotificationById,
   markNotificationAsRead,
 };
